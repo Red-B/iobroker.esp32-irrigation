@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ESP32 Irrigation Adapter Configuration</title>
+
+    <link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
+    <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
+
+    <script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../../socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="../../js/translate.js"></script>
+    <script type="text/javascript" src="../../lib/js/materialize.js"></script>
+    <script type="text/javascript" src="../../js/adapter-settings.js"></script>
+
+    <style>
+        .adapter-container {
+            background: #fff;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 20px 0 10px 0;
+            color: #1976d2;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        
+        .input-field {
+            margin-bottom: 20px;
+        }
+        
+        .connection-test {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .connection-test.success {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        
+        .connection-test.error {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        
+        .connection-test.testing {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .info-box h4 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        
+        .info-box p {
+            margin-bottom: 0;
+            color: #424242;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="m adapter-container">
+        <div class="row">
+            <div class="col s12">
+                <h4 class="translate">ESP32 Garden Irrigation System</h4>
+                
+                <div class="info-box">
+                    <h4 class="translate">About this Adapter</h4>
+                    <p class="translate">This adapter connects to your ESP32-based garden irrigation system and provides all sensor data, status information, and control functions as ioBroker states.</p>
+                    <p class="translate">Features include: soil moisture and temperature monitoring, manual relay control, automated scheduling, and pause functionality.</p>
+                </div>
+                
+                <div class="section-title translate">Connection Settings</div>
+                
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <input type="text" class="value" id="host" />
+                        <label for="host" class="translate">ESP32 IP Address</label>
+                        <span class="helper-text translate">IP address of your ESP32 irrigation system</span>
+                    </div>
+                    
+                    <div class="input-field col s12 m6">
+                        <input type="number" class="value" id="port" min="1" max="65535" />
+                        <label for="port" class="translate">Port</label>
+                        <span class="helper-text translate">HTTP port (usually 80)</span>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <input type="text" class="value" id="username" />
+                        <label for="username" class="translate">Username</label>
+                        <span class="helper-text translate">Login username for ESP32 web interface</span>
+                    </div>
+                    
+                    <div class="input-field col s12 m6">
+                        <input type="password" class="value" id="password" />
+                        <label for="password" class="translate">Password</label>
+                        <span class="helper-text translate">Login password for ESP32 web interface</span>
+                    </div>
+                </div>
+                
+                <div class="section-title translate">Update Settings</div>
+                
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <input type="number" class="value" id="interval" min="5" max="3600" />
+                        <label for="interval" class="translate">Update Interval (seconds)</label>
+                        <span class="helper-text translate">How often to poll the ESP32 for new data (5-3600 seconds)</span>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col s12">
+                        <button type="button" class="btn waves-effect waves-light" id="testConnection">
+                            <i class="material-icons left">wifi</i>
+                            <span class="translate">Test Connection</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="connectionResult" class="connection-test" style="display: none;">
+                    <span id="connectionText"></span>
+                </div>
+                
+                <div class="section-title translate">Available States</div>
+                
+                <div class="info-box">
+                    <h4 class="translate">State Structure</h4>
+                    <p><strong>Sensors:</strong> soilMoisture, soilTemperature</p>
+                    <p><strong>Status:</strong> relay1Active, relay2Active, irrigationInProgress, nextIrrigation, uptime</p>
+                    <p><strong>Control:</strong> relay1, relay2, pauseDays</p>
+                    <p><strong>Config:</strong> moistureThreshold, dstEnabled, pauseUntil</p>
+                    <p><strong>Schedule:</strong> For each weekday: enabled, hour, minute, duration1, duration2</p>
+                    <p><strong>Actions:</strong> saveConfig, refreshData</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Dictionary for translations
+        systemDictionary = {
+            "ESP32 Garden Irrigation System": {
+                "en": "ESP32 Garden Irrigation System",
+                "de": "ESP32 Gartenbewässerungssystem",
+                "ru": "Система полива сада ESP32",
+                "pt": "Sistema de Irrigação de Jardim ESP32",
+                "nl": "ESP32 Tuin Irrigatiesysteem",
+                "fr": "Système d'irrigation de jardin ESP32",
+                "it": "Sistema di irrigazione del giardino ESP32",
+                "es": "Sistema de riego de jardín ESP32",
+                "pl": "System nawadniania ogrodu ESP32",
+                "zh-cn": "ESP32花园灌溉系统"
+            },
+            "About this Adapter": {
+                "en": "About this Adapter",
+                "de": "Über diesen Adapter",
+                "ru": "Об этом адаптере",
+                "pt": "Sobre este Adaptador",
+                "nl": "Over deze Adapter",
+                "fr": "À propos de cet adaptateur",
+                "it": "Informazioni su questo adattatore",
+                "es": "Acerca de este adaptador",
+                "pl": "O tym adapterze",
+                "zh-cn": "关于此适配器"
+            },
+            "This adapter connects to your ESP32-based garden irrigation system and provides all sensor data, status information, and control functions as ioBroker states.": {
+                "en": "This adapter connects to your ESP32-based garden irrigation system and provides all sensor data, status information, and control functions as ioBroker states.",
+                "de": "Dieser Adapter verbindet sich mit Ihrem ESP32-basierten Gartenbewässerungssystem und stellt alle Sensordaten, Statusinformationen und Steuerfunktionen als ioBroker-States zur Verfügung.",
+                "ru": "Этот адаптер подключается к вашей системе полива сада на базе ESP32 и предоставляет все данные датчиков, информацию о состоянии и функции управления в виде состояний ioBroker.",
+                "pt": "Este adaptador conecta-se ao seu sistema de irrigação de jardim baseado em ESP32 e fornece todos os dados do sensor, informações de status e funções de controle como estados do ioBroker.",
+                "nl": "Deze adapter verbindt met uw ESP32-gebaseerde tuinirrigatiesysteem en biedt alle sensorgegevens, statusinformatie en besturingsfuncties als ioBroker-toestanden.",
+                "fr": "Cet adaptateur se connecte à votre système d'irrigation de jardin basé sur ESP32 et fournit toutes les données de capteur, informations d'état et fonctions de contrôle en tant qu'états ioBroker.",
+                "it": "Questo adattatore si collega al tuo sistema di irrigazione del giardino basato su ESP32 e fornisce tutti i dati del sensore, le informazioni di stato e le funzioni di controllo come stati ioBroker.",
+                "es": "Este adaptador se conecta a su sistema de riego de jardín basado en ESP32 y proporciona todos los datos del sensor, información de estado y funciones de control como estados de ioBroker.",
+                "pl": "Ten adapter łączy się z systemem nawadniania ogrodu opartym na ESP32 i zapewnia wszystkie dane czujników, informacje o stanie i funkcje kontroli jako stany ioBroker.",
+                "zh-cn": "此适配器连接到您基于ESP32的花园灌溉系统，并将所有传感器数据、状态信息和控制功能作为ioBroker状态提供。"
+            },
+            "Features include: soil moisture and temperature monitoring, manual relay control, automated scheduling, and pause functionality.": {
+                "en": "Features include: soil moisture and temperature monitoring, manual relay control, automated scheduling, and pause functionality.",
+                "de": "Funktionen umfassen: Überwachung von Bodenfeuchtigkeit und -temperatur, manuelle Relaissteuerung, automatisierte Zeitplanung und Pausenfunktion.",
+                "ru": "Функции включают: мониторинг влажности и температуры почвы, ручное управление реле, автоматическое планирование и функция паузы.",
+                "pt": "Os recursos incluem: monitoramento de umidade e temperatura do solo, controle manual de relé, agendamento automatizado e funcionalidade de pausa.",
+                "nl": "Functies omvatten: bodemvochtigheid en temperatuurmonitoring, handmatige relaisbesturing, geautomatiseerde planning en pausefunctionaliteit.",
+                "fr": "Les fonctionnalités incluent : surveillance de l'humidité et de la température du sol, contrôle manuel des relais, planification automatisée et fonctionnalité de pause.",
+                "it": "Le caratteristiche includono: monitoraggio dell'umidità e della temperatura del suolo, controllo manuale del relè, programmazione automatizzata e funzionalità di pausa.",
+                "es": "Las características incluyen: monitoreo de humedad y temperatura del suelo, control manual de relés, programación automatizada y funcionalidad de pausa.",
+                "pl": "Funkcje obejmują: monitorowanie wilgotności i temperatury gleby, ręczne sterowanie przekaźnikami, automatyczne planowanie i funkcję pauzy.",
+                "zh-cn": "功能包括：土壤湿度和温度监测、手动继电器控制、自动调度和暂停功能。"
+            },
+            "Connection Settings": {
+                "en": "Connection Settings",
+                "de": "Verbindungseinstellungen",
+                "ru": "Настройки подключения",
+                "pt": "Configurações de Conexão",
+                "nl": "Verbindingsinstellingen",
+                "fr": "Paramètres de connexion",
+                "it": "Impostazioni di connessione",
+                "es": "Configuración de conexión",
+                "pl": "Ustawienia połączenia",
+                "zh-cn": "连接设置"
+            },
+            "ESP32 IP Address": {
+                "en": "ESP32 IP Address",
+                "de": "ESP32 IP-Adresse",
+                "ru": "IP-адрес ESP32",
+                "pt": "Endereço IP ESP32",
+                "nl": "ESP32 IP-adres",
+                "fr": "Adresse IP ESP32",
+                "it": "Indirizzo IP ESP32",
+                "es": "Dirección IP ESP32",
+                "pl": "Adres IP ESP32",
+                "zh-cn": "ESP32 IP地址"
+            },
+            "IP address of your ESP32 irrigation system": {
+                "en": "IP address of your ESP32 irrigation system",
+                "de": "IP-Adresse Ihres ESP32 Bewässerungssystems",
+                "ru": "IP-адрес вашей системы орошения ESP32",
+                "pt": "Endereço IP do seu sistema de irrigação ESP32",
+                "nl": "IP-adres van uw ESP32 irrigatiesysteem",
+                "fr": "Adresse IP de votre système d'irrigation ESP32",
+                "it": "Indirizzo IP del tuo sistema di irrigazione ESP32",
+                "es": "Dirección IP de su sistema de riego ESP32",
+                "pl": "Adres IP systemu nawadniania ESP32",
+                "zh-cn": "您的ESP32灌溉系统的IP地址"
+            },
+            "Port": {
+                "en": "Port",
+                "de": "Port",
+                "ru": "Порт",
+                "pt": "Porta",
+                "nl": "Poort",
+                "fr": "Port",
+                "it": "Porta",
+                "es": "Puerto",
+                "pl": "Port",
+                "zh-cn": "端口"
+            },
+            "HTTP port (usually 80)": {
+                "en": "HTTP port (usually 80)",
+                "de": "HTTP-Port (normalerweise 80)",
+                "ru": "HTTP-порт (обычно 80)",
+                "pt": "Porta HTTP (geralmente 80)",
+                "nl": "HTTP-poort (meestal 80)",
+                "fr": "Port HTTP (généralement 80)",
+                "it": "Porta HTTP (di solito 80)",
+                "es": "Puerto HTTP (generalmente 80)",
+                "pl": "Port HTTP (zwykle 80)",
+                "zh-cn": "HTTP端口（通常为80）"
+            },
+            "Username": {
+                "en": "Username",
+                "de": "Benutzername",
+                "ru": "Имя пользователя",
+                "pt": "Nome de usuário",
+                "nl": "Gebruikersnaam",
+                "fr": "Nom d'utilisateur",
+                "it": "Nome utente",
+                "es": "Nombre de usuario",
+                "pl": "Nazwa użytkownika",
+                "zh-cn": "用户名"
+            },
+            "Login username for ESP32 web interface": {
+                "en": "Login username for ESP32 web interface",
+                "de": "Login-Benutzername für ESP32-Webinterface",
+                "ru": "Имя пользователя для входа в веб-интерфейс ESP32",
+                "pt": "Nome de usuário de login para interface web ESP32",
+                "nl": "Inlog gebruikersnaam voor ESP32 webinterface",
+                "fr": "Nom d'utilisateur de connexion pour l'interface web ESP32",
+                "it": "Nome utente di accesso per l'interfaccia web ESP32",
+                "es": "Nombre de usuario de inicio de sesión para la interfaz web ESP32",
+                "pl": "Nazwa użytkownika logowania dla interfejsu web ESP32",
+                "zh-cn": "ESP32网络界面登录用户名"
+            },
+            "Password": {
+                "en": "Password",
+                "de": "Passwort",
+                "ru": "Пароль",
+                "pt": "Senha",
+                "nl": "Wachtwoord",
+                "fr": "Mot de passe",
+                "it": "Password",
+                "es": "Contraseña",
+                "pl": "Hasło",
+                "zh-cn": "密码"
+            },
+            "Login password for ESP32 web interface": {
+                "en": "Login password for ESP32 web interface",
+                "de": "Login-Passwort für ESP32-Webinterface",
+                "ru": "Пароль для входа в веб-интерфейс ESP32",
+                "pt": "Senha de login para interface web ESP32",
+                "nl": "Inlog wachtwoord voor ESP32 webinterface",
+                "fr": "Mot de passe de connexion pour l'interface web ESP32",
+                "it": "Password di accesso per l'interfaccia web ESP32",
+                "es": "Contraseña de inicio de sesión para la interfaz web ESP32",
+                "pl": "Hasło logowania dla interfejsu web ESP32",
+                "zh-cn": "ESP32网络界面登录密码"
+            },
+            "Update Settings": {
+                "en": "Update Settings",
+                "de": "Update-Einstellungen",
+                "ru": "Настройки обновления",
+                "pt": "Configurações de Atualização",
+                "nl": "Update-instellingen",
+                "fr": "Paramètres de mise à jour",
+                "it": "Impostazioni di aggiornamento",
+                "es": "Configuración de actualización",
+                "pl": "Ustawienia aktualizacji",
+                "zh-cn": "更新设置"
+            },
+            "Update Interval (seconds)": {
+                "en": "Update Interval (seconds)",
+                "de": "Update-Intervall (Sekunden)",
+                "ru": "Интервал обновления (секунды)",
+                "pt": "Intervalo de Atualização (segundos)",
+                "nl": "Update-interval (seconden)",
+                "fr": "Intervalle de mise à jour (secondes)",
+                "it": "Intervallo di aggiornamento (secondi)",
+                "es": "Intervalo de actualización (segundos)",
+                "pl": "Interwał aktualizacji (sekundy)",
+                "zh-cn": "更新间隔（秒）"
+            },
+            "How often to poll the ESP32 for new data (5-3600 seconds)": {
+                "en": "How often to poll the ESP32 for new data (5-3600 seconds)",
+                "de": "Wie oft das ESP32 nach neuen Daten abgefragt werden soll (5-3600 Sekunden)",
+                "ru": "Как часто опрашивать ESP32 на предмет новых данных (5-3600 секунд)",
+                "pt": "Com que frequência sondar o ESP32 para novos dados (5-3600 segundos)",
+                "nl": "Hoe vaak de ESP32 bevragen voor nieuwe gegevens (5-3600 seconden)",
+                "fr": "À quelle fréquence interroger l'ESP32 pour de nouvelles données (5-3600 secondes)",
+                "it": "Quanto spesso interrogare l'ESP32 per nuovi dati (5-3600 secondi)",
+                "es": "Con qué frecuencia sondear el ESP32 para nuevos datos (5-3600 segundos)",
+                "pl": "Jak często odpytywać ESP32 o nowe dane (5-3600 sekund)",
+                "zh-cn": "多久轮询ESP32获取新数据（5-3600秒）"
+            },
+            "Test Connection": {
+                "en": "Test Connection",
+                "de": "Verbindung testen",
+                "ru": "Тест соединения",
+                "pt": "Testar Conexão",
+                "nl": "Verbinding testen",
+                "fr": "Tester la connexion",
+                "it": "Testa connessione",
+                "es": "Probar conexión",
+                "pl": "Testuj połączenie",
+                "zh-cn": "测试连接"
+            },
+            "Available States": {
+                "en": "Available States",
+                "de": "Verfügbare States",
+                "ru": "Доступные состояния",
+                "pt": "Estados Disponíveis",
+                "nl": "Beschikbare toestanden",
+                "fr": "États disponibles",
+                "it": "Stati disponibili",
+                "es": "Estados disponibles",
+                "pl": "Dostępne stany",
+                "zh-cn": "可用状态"
+            },
+            "State Structure": {
+                "en": "State Structure",
+                "de": "State-Struktur",
+                "ru": "Структура состояний",
+                "pt": "Estrutura de Estados",
+                "nl": "Toestand structuur",
+                "fr": "Structure des états",
+                "it": "Struttura degli stati",
+                "es": "Estructura de estados",
+                "pl": "Struktura stanów",
+                "zh-cn": "状态结构"
+            },
+            "Testing connection...": {
+                "en": "Testing connection...",
+                "de": "Verbindung wird getestet...",
+                "ru": "Тестирование соединения...",
+                "pt": "Testando conexão...",
+                "nl": "Verbinding testen...",
+                "fr": "Test de connexion...",
+                "it": "Test connessione...",
+                "es": "Probando conexión...",
+                "pl": "Testowanie połączenia...",
+                "zh-cn": "测试连接中..."
+            },
+            "Connection successful!": {
+                "en": "Connection successful!",
+                "de": "Verbindung erfolgreich!",
+                "ru": "Соединение успешно!",
+                "pt": "Conexão bem-sucedida!",
+                "nl": "Verbinding succesvol!",
+                "fr": "Connexion réussie!",
+                "it": "Connessione riuscita!",
+                "es": "¡Conexión exitosa!",
+                "pl": "Połączenie udane!",
+                "zh-cn": "连接成功！"
+            },
+            "Connection failed: ": {
+                "en": "Connection failed: ",
+                "de": "Verbindung fehlgeschlagen: ",
+                "ru": "Соединение не удалось: ",
+                "pt": "Falha na conexão: ",
+                "nl": "Verbinding mislukt: ",
+                "fr": "Échec de la connexion: ",
+                "it": "Connessione fallita: ",
+                "es": "Conexión fallida: ",
+                "pl": "Połączenie nieudane: ",
+                "zh-cn": "连接失败："
+            }
+        };
+
+        // Load settings
+        function load(settings, onChange) {
+            if (!settings) return;
+            
+            $('.value').each(function () {
+                var $key = $(this);
+                var id = $key.attr('id');
+                if ($key.attr('type') === 'checkbox') {
+                    $key.prop('checked', settings[id]).trigger('change');
+                } else {
+                    $key.val(settings[id]).trigger('change');
+                }
+            });
+            
+            onChange(false);
+            
+            // Update labels
+            M.updateTextFields();
+        }
+
+        // Save settings
+        function save(callback) {
+            var obj = {};
+            $('.value').each(function () {
+                var $this = $(this);
+                var id = $this.attr('id');
+                if ($this.attr('type') === 'checkbox') {
+                    obj[id] = $this.prop('checked');
+                } else {
+                    obj[id] = $this.val();
+                }
+            });
+            callback(obj);
+        }
+
+        // Test connection
+        function testConnection() {
+            var host = $('#host').val();
+            var port = $('#port').val();
+            var username = $('#username').val();
+            var password = $('#password').val();
+            
+            if (!host) {
+                showConnectionResult('error', _('Please enter IP address'));
+                return;
+            }
+            
+            showConnectionResult('testing', _('Testing connection...'));
+            
+            var url = 'http://' + host + ':' + port + '/api/status';
+            var auth = btoa(username + ':' + password);
+            
+            $.ajax({
+                url: url,
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Basic ' + auth
+                },
+                timeout: 10000,
+                success: function(data) {
+                    showConnectionResult('success', _('Connection successful!'));
+                },
+                error: function(xhr, status, error) {
+                    var message = _('Connection failed: ') + (error || status);
+                    if (xhr.status === 401) {
+                        message = _('Connection failed: ') + 'Authentication error - check username and password';
+                    } else if (xhr.status === 0) {
+                        message = _('Connection failed: ') + 'Network error - check IP address and port';
+                    }
+                    showConnectionResult('error', message);
+                }
+            });
+        }
+
+        function showConnectionResult(type, message) {
+            var $result = $('#connectionResult');
+            var $text = $('#connectionText');
+            
+            $result.removeClass('success error testing');
+            $result.addClass(type);
+            $text.text(message);
+            $result.show();
+        }
+
+        // Initialize
+        $(document).ready(function() {
+            // Initialize materialize components
+            M.AutoInit();
+            
+            // Bind test connection button
+            $('#testConnection').click(testConnection);
+            
+            // Translate page
+            translateAll();
+        });
+    </script>
+</body>
+</html>

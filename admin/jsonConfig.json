@@ -1,0 +1,159 @@
+{
+    "i18n": true,
+    "type": "panel",
+    "items": {
+        "_header": {
+            "type": "header",
+            "text": "ESP32 Garden Irrigation System",
+            "size": 2
+        },
+        "_info": {
+            "type": "staticText",
+            "text": "This adapter connects to your ESP32-based garden irrigation system and provides all sensor data, status information, and control functions as ioBroker states.",
+            "style": {
+                "fontSize": 16,
+                "fontStyle": "italic",
+                "marginBottom": 20
+            }
+        },
+        "_connection": {
+            "type": "panel",
+            "label": "Connection Settings",
+            "items": {
+                "host": {
+                    "type": "text",
+                    "label": "ESP32 IP Address or Hostname",
+                    "placeholder": "192.168.1.100 or esp32-irrigation.local",
+                    "help": "IP address or hostname of your ESP32 irrigation system",
+                    "required": true,
+                    "trim": true,
+                    "validator": "data.host && (data.host.match(/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/) || data.host.match(/^[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?([\\.]([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?))*$/))",
+                    "validatorErrorText": "Please enter a valid IP address (e.g. 192.168.1.100) or hostname (e.g. esp32-irrigation.local)"
+                },
+                "port": {
+                    "type": "number",
+                    "label": "Port",
+                    "min": 1,
+                    "max": 65535,
+                    "default": 80,
+                    "help": "HTTP port (usually 80)"
+                },
+                "username": {
+                    "type": "text",
+                    "label": "Username",
+                    "default": "admin",
+                    "help": "Login username for ESP32 web interface",
+                    "required": true,
+                    "trim": true
+                },
+                "password": {
+                    "type": "password",
+                    "label": "Password",
+                    "default": "irrigation",
+                    "help": "Login password for ESP32 web interface",
+                    "required": true
+                }
+            }
+        },
+        "_update": {
+            "type": "panel",
+            "label": "Update Settings",
+            "items": {
+                "interval": {
+                    "type": "number",
+                    "label": "Update Interval (seconds)",
+                    "min": 5,
+                    "max": 3600,
+                    "default": 30,
+                    "help": "How often to poll the ESP32 for new data (5-3600 seconds)"
+                }
+            }
+        },
+        "_test": {
+            "type": "divider"
+        },
+        "testConnection": {
+            "type": "sendTo",
+            "command": "testConnection",
+            "jsonData": "{\"host\": \"${data.host}\", \"port\": \"${data.port}\", \"username\": \"${data.username}\", \"password\": \"${data.password}\"}",
+            "button": true,
+            "variant": "contained",
+            "color": "primary",
+            "icon": "wifi",
+            "label": "Test Connection",
+            "help": "Click to test the connection to your ESP32 system",
+            "showResult": true
+        },
+        "_info2": {
+            "type": "panel",
+            "label": "Available States",
+            "items": {
+                "_states": {
+                    "type": "staticText",
+                    "text": "After successful connection, the following state structure will be created:",
+                    "style": {
+                        "fontWeight": "bold",
+                        "marginBottom": 10
+                    }
+                },
+                "_structure": {
+                    "type": "staticText",
+                    "text": "• Sensors: soilMoisture, soilTemperature\n• Status: relay1Active, relay2Active, irrigationInProgress, nextIrrigation, uptime\n• Control: relay1, relay2, pauseDays\n• Config: moistureThreshold, dstEnabled, pauseUntil\n• Schedule: For each weekday - enabled, hour, minute, duration1, duration2\n• Actions: saveConfig, refreshData",
+                    "style": {
+                        "fontFamily": "monospace",
+                        "backgroundColor": "#f5f5f5",
+                        "padding": 15,
+                        "borderRadius": 4,
+                        "whiteSpace": "pre-line"
+                    }
+                }
+            }
+        },
+        "_examples": {
+            "type": "panel",
+            "label": "Usage Examples",
+            "items": {
+                "_example1": {
+                    "type": "staticText",
+                    "text": "Manual Control:",
+                    "style": {
+                        "fontWeight": "bold",
+                        "marginTop": 10
+                    }
+                },
+                "_example1_code": {
+                    "type": "staticText",
+                    "text": "setState('esp32-irrigation.0.control.relay1', true);  // Start irrigation\nsetState('esp32-irrigation.0.control.pauseDays', 3);   // Pause for 3 days",
+                    "style": {
+                        "fontFamily": "monospace",
+                        "backgroundColor": "#f0f0f0",
+                        "padding": 10,
+                        "borderRadius": 4,
+                        "whiteSpace": "pre",
+                        "fontSize": 12,
+                        "marginBottom": 10
+                    }
+                },
+                "_example2": {
+                    "type": "staticText",
+                    "text": "Schedule Configuration:",
+                    "style": {
+                        "fontWeight": "bold"
+                    }
+                },
+                "_example2_code": {
+                    "type": "staticText",
+                    "text": "// Monday 6:30 AM, 10 minutes each channel\nsetState('esp32-irrigation.0.schedule.monday.enabled', true);\nsetState('esp32-irrigation.0.schedule.monday.hour', 6);\nsetState('esp32-irrigation.0.schedule.monday.minute', 30);\nsetState('esp32-irrigation.0.schedule.monday.duration1', 10);\nsetState('esp32-irrigation.0.schedule.monday.duration2', 10);\n\n// Save configuration\nsetState('esp32-irrigation.0.actions.saveConfig', true);",
+                    "style": {
+                        "fontFamily": "monospace",
+                        "backgroundColor": "#f0f0f0",
+                        "padding": 10,
+                        "borderRadius": 4,
+                        "whiteSpace": "pre",
+                        "fontSize": 12
+                    }
+                }
+            }
+        }
+    }
+}

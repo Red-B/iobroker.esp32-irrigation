@@ -1,0 +1,173 @@
+{
+  "common": {
+    "name": "esp32-irrigation",
+    "version": "1.0.0",
+    "news": {
+      "1.0.0": {
+        "en": "Initial release",
+        "de": "Erste Veröffentlichung",
+        "ru": "Первоначальный выпуск",
+        "pt": "Lançamento inicial",
+        "nl": "Eerste release",
+        "fr": "Version initiale",
+        "it": "Rilascio iniziale",
+        "es": "Lanzamiento inicial",
+        "pl": "Pierwsze wydanie",
+        "zh-cn": "首次发布"
+      }
+    },
+    "title": "ESP32 Garden Irrigation System",
+    "titleLang": {
+      "en": "ESP32 Garden Irrigation System",
+      "de": "ESP32 Gartenbewässerungssystem",
+      "ru": "Система полива сада ESP32",
+      "pt": "Sistema de Irrigação de Jardim ESP32",
+      "nl": "ESP32 Tuin Irrigatiesysteem",
+      "fr": "Système d'irrigation de jardin ESP32",
+      "it": "Sistema di irrigazione del giardino ESP32",
+      "es": "Sistema de riego de jardín ESP32",
+      "pl": "System nawadniania ogrodu ESP32",
+      "zh-cn": "ESP32花园灌溉系统"
+    },
+    "desc": {
+      "en": "Adapter for ESP32-based garden irrigation system with Modbus soil sensors",
+      "de": "Adapter für ESP32-basiertes Gartenbewässerungssystem mit Modbus-Bodensensoren",
+      "ru": "Адаптер для системы полива сада на базе ESP32 с датчиками почвы Modbus",
+      "pt": "Adaptador para sistema de irrigação de jardim baseado em ESP32 com sensores de solo Modbus",
+      "nl": "Adapter voor ESP32-gebaseerd tuinirrigatiesysteem met Modbus-grond sensoren",
+      "fr": "Adaptateur pour système d'irrigation de jardin basé sur ESP32 avec capteurs de sol Modbus",
+      "it": "Adattatore per sistema di irrigazione del giardino basato su ESP32 con sensori del suolo Modbus",
+      "es": "Adaptador para sistema de riego de jardín basado en ESP32 con sensores de suelo Modbus",
+      "pl": "Adapter do systemu nawadniania ogrodu opartego na ESP32 z czujnikami gleby Modbus",
+      "zh-cn": "基于ESP32的花园灌溉系统适配器，带有Modbus土壤传感器"
+    },
+    "authors": [
+      "Your Name <your.email@example.com>"
+    ],
+    "keywords": [
+      "esp32",
+      "irrigation",
+      "garden",
+      "watering",
+      "modbus",
+      "sensors",
+      "automation"
+    ],
+    "license": "MIT",
+    "platform": "Javascript/Node.js",
+    "main": "main.js",
+    "icon": "esp32-irrigation.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/yourusername/iobroker.esp32-irrigation/main/admin/esp32-irrigation.png",
+    "readme": "https://github.com/yourusername/iobroker.esp32-irrigation/blob/main/README.md",
+    "loglevel": "info",
+    "mode": "daemon",
+    "type": "garden",
+    "compact": true,
+    "connectionType": "local",
+    "dataSource": "poll",
+    "adminUI": {
+      "config": "json"
+    },
+    "adminTab": {
+      "singleton": true
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=2.0.0"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=5.1.13"
+      }
+    ]
+  },
+  "native": {
+    "host": "192.168.1.100",
+    "port": 80,
+    "username": "admin",
+    "password": "irrigation",
+    "interval": 30
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "Device or service connected",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "sensors",
+      "type": "channel",
+      "common": {
+        "name": "Sensors"
+      },
+      "native": {}
+    },
+    {
+      "_id": "status",
+      "type": "channel",
+      "common": {
+        "name": "Status"
+      },
+      "native": {}
+    },
+    {
+      "_id": "control",
+      "type": "channel",
+      "common": {
+        "name": "Control"
+      },
+      "native": {}
+    },
+    {
+      "_id": "config",
+      "type": "channel",
+      "common": {
+        "name": "Configuration"
+      },
+      "native": {}
+    },
+    {
+      "_id": "schedule",
+      "type": "channel",
+      "common": {
+        "name": "Schedule"
+      },
+      "native": {}
+    },
+    {
+      "_id": "actions",
+      "type": "channel",
+      "common": {
+        "name": "Actions"
+      },
+      "native": {}
+    },
+    {
+      "_id": "history",
+      "type": "channel",
+      "common": {
+        "name": "History Data"
+      },
+      "native": {}
+    }
+  ]
+}
